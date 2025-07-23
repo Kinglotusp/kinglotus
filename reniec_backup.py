@@ -1411,6 +1411,31 @@ def cmd_comandos(message):
 
 if __name__ == "__main__":
     print("🤖 Bot iniciado...")
+    
+    # Para Render Web Service: crear servidor HTTP básico en thread separado
+    import threading
+    from http.server import HTTPServer, BaseHTTPRequestHandler
+    
+    class HealthHandler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.send_header('Content-type', 'text/plain')
+            self.end_headers()
+            self.wfile.write(b'Bot is running!')
+        
+        def log_message(self, format, *args):
+            pass  # Silenciar logs HTTP
+    
+    def start_health_server():
+        port = int(os.environ.get('PORT', 10000))
+        server = HTTPServer(('0.0.0.0', port), HealthHandler)
+        print(f"🌐 Servidor HTTP iniciado en puerto {port}")
+        server.serve_forever()
+    
+    # Iniciar servidor HTTP en thread separado
+    health_thread = threading.Thread(target=start_health_server, daemon=True)
+    health_thread.start()
+    
     try:
         # Obtener información del servidor
         import socket
