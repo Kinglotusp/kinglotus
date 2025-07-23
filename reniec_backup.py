@@ -10,6 +10,14 @@ from io import BytesIO
 
 # Configuración
 BOT_TOKEN = '7280597025:AAEHXfJUoh5zcVKJSRH3XdgzbmOYeydnZPE'
+# Tokens para las diferentes IPs de Render
+API_TOKENS = {
+    '35.160.120.126': 'eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpcCI6IjM1LjE2MC4xMjAuMTI2IiwicGxhdGZvcm0iOiJBUEkiLCJ1c3VhcmlvIjp7Il9pZCI6IjY4NjhiYTIwMzAyNzc4YTA5Mjc2ZDU0NSIsIm5hbWUiOiJraW5nbG90dXNwIiwicmFuZ28iOiJ1c2VyIiwic3BhbSI6MzAsImNfZXhwaXJ5IjoxNzU0Mjg1OTg4fSwiaWF0IjoxNzUzMjUwNzMxLCJleHAiOjE3NTQyMDExMzF9.yRrxcB1bXsgED99BuLPidB4YXFE8-MsoebYZDWiFG9DsRWqqwwOJ0WNZT-RinMt0eA_IKjllzGm_WHo0vLfeVQ',
+    '44.233.151.27': 'eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpcCI6IjQ0LjIzMy4xNTEuMjciLCJwbGF0Zm9ybSI6IkFQSSIsInVzdWFyaW8iOnsiX2lkIjoiNjg2OGJhMjAzMDI3NzhhMDkyNzZkNTQ1IiwibmFtZSI6Imtpbmdsb3R1c3AiLCJyYW5nbyI6InVzZXIiLCJzcGFtIjozMCwiY19leHBpcnkiOjE3NTQyODU5ODh9LCJpYXQiOjE3NTMyNTA3NTYsImV4cCI6MTc1NDIwMTE1Nn0.BCESqMO0bFD5GEjU6uDggyKtQdYiTe5j5ERgUIn2kEk-JHZ27lzGYzJppH60vQHfL3PM_031e3EFJuAWPQxMAw', 
+    '34.211.200.85': 'eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpcCI6IjM0LjIxMS4yMDAuODUiLCJwbGF0Zm9ybSI6IkFQSSIsInVzdWFyaW8iOnsiX2lkIjoiNjg2OGJhMjAzMDI3NzhhMDkyNzZkNTQ1IiwibmFtZSI6Imtpbmdsb3R1c3AiLCJyYW5nbyI6InVzZXIiLCJzcGFtIjozMCwiY19leHBpcnkiOjE3NTQyODU5ODh9LCJpYXQiOjE3NTMyNTA3ODYsImV4cCI6MTc1NDIwMTE4Nn0.p9DL7LwwpRjbd0mykDgjgw0Pq5qrOO-cetVVG7fi5UBKPZYqkOH9moy6UGjah8CnrKNhvfGbeTSSCFxJShNr5A'
+}
+
+# Token por defecto (el actual)
 API_TOKEN = 'eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJpcCI6IjUyLjkxLjkyLjI1NCIsInBsYXRmb3JtIjoiQVBJIiwidXN1YXJpbyI6eyJfaWQiOiI2ODY4YmEyMDMwMjc3OGEwOTI3NmQ1NDUiLCJuYW1lIjoia2luZ2xvdHVzcCIsInJhbmdvIjoidXNlciIsInNwYW0iOjMwLCJjX2V4cGlyeSI6MTc1NDI4NTk4OH0sImlhdCI6MTc1MzI0NzE3MCwiZXhwIjoxNzU0MjgzOTcwfQ.VbsjrG7bDj60h0_0scCNpWscvwf99OVXL6GA8As0biEkedMB4-t6vPFFwuYsfWpgizrE3D-0HOhB4LTThdB2rw'
 API_BASE = 'https://lookfriends.xyz/api'
 USUARIOS = 'usuarios.txt'
@@ -30,8 +38,8 @@ def verificar_antispam(user_id):
     
     if user_id in user_last_command:
         tiempo_transcurrido = (ahora - user_last_command[user_id]).total_seconds()
-        if tiempo_transcurrido < 60:  # 60 segundos de cooldown
-            return False, int(60 - tiempo_transcurrido)
+        if tiempo_transcurrido < 120:  # 120 segundos de cooldown (2 minutos)
+            return False, int(120 - tiempo_transcurrido)
     
     user_last_command[user_id] = ahora
     return True, 0
@@ -1404,13 +1412,35 @@ def cmd_comandos(message):
 if __name__ == "__main__":
     print("🤖 Bot iniciado...")
     try:
+        # Obtener información del servidor
+        import socket
+        hostname = socket.gethostname()
+        local_ip = socket.gethostbyname(hostname)
+        
+        # Obtener IP pública
+        try:
+            public_ip_response = requests.get('https://api.ipify.org', timeout=10)
+            public_ip = public_ip_response.text if public_ip_response.status_code == 200 else "No disponible"
+        except:
+            public_ip = "No disponible"
+        
+        print(f"🖥️ Hostname: {hostname}")
+        print(f"📍 IP Local: {local_ip}")
+        print(f"🌐 IP Pública: {public_ip}")
+        
         bot_info = bot.get_me()
         print(f"📱 Bot username: @{bot_info.username}")
         print(f"👤 Bot name: {bot_info.first_name}")
         print("🔄 Iniciando polling...")
         
-        # Notificar al admin que el bot está activo
-        bot.send_message(ADMIN_ID, "✅ El bot está activo y listo para usar.")
+        # Notificar al admin que el bot está activo con información del servidor
+        server_info = f"✅ *El bot está activo y listo para usar.*\n\n" \
+                     f"🖥️ *Hostname:* `{hostname}`\n" \
+                     f"📍 *IP Local:* `{local_ip}`\n" \
+                     f"🌐 *IP Pública:* `{public_ip}`\n" \
+                     f"📱 *Bot:* @{bot_info.username}"
+        
+        bot.send_message(ADMIN_ID, server_info, parse_mode='Markdown')
         
         # Configurar para producción (más robusto)
         bot.infinity_polling(
